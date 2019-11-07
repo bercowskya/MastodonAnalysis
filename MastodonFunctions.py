@@ -2,12 +2,10 @@ import numpy as np
 import matplotlib.pylab as plt
 import pandas as pd
 import scipy as sc
-import xml.etree.ElementTree as ET
 import untangle
+import xml.etree.ElementTree as ET
+from scipy.stats import gaussian_kde, pearsonr, gaussian_kde
 import scipy.spatial.distance
-from scipy import spatial , signal
-from scipy.spatial import distance
-from scipy.stats import gaussian_kde, pearsonr,gaussian_kde
 
 
 # Obtain all the features that are in the .xml file which has been generated when the data
@@ -17,17 +15,34 @@ class xml_features:
         # Parse .xml file
         obj = untangle.parse(path_xml)
         # Data Features
-        self.width = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[0])
-        self.height = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[1])
-        self.n_slices = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[2])
-
-        self.x_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[0])
-        self.y_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[1])
-        self.z_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[2])
+        self.channels = len(obj.SpimData.SequenceDescription.ViewSetups.Attributes)
+        ch = self.channels
         self.dim = 3
+        
+        if ch > 1:
+            self.width = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[0])
+            self.height = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[1])
+            self.n_slices = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].size.cdata.split()[2])
 
-        self.channels = len(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup)
-        self.units = obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.unit.cdata
+            self.x_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[0])
+            self.y_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[1])
+            self.z_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.size.cdata.split()[2])
+            
+            self.units = obj.SpimData.SequenceDescription.ViewSetups.ViewSetup[0].voxelSize.unit.cdata
+        else:
+            self.width = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.size.cdata.split()[0])
+            self.height = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.size.cdata.split()[1])
+            self.n_slices = int(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.size.cdata.split()[2])
+
+            self.x_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.voxelSize.size.cdata.split()[0])
+            self.y_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.voxelSize.size.cdata.split()[1])
+            self.z_pixel = float(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.voxelSize.size.cdata.split()[2])
+            
+            self.units = obj.SpimData.SequenceDescription.ViewSetups.ViewSetup.voxelSize.unit.cdata
+            
+
+        #self.channels = len(obj.SpimData.SequenceDescription.ViewSetups.ViewSetup)
+      
         while True:
             try:
                 self.n_frames = len(obj.SpimData.SequenceDescription.Timepoints.integerpattern.cdata.split())
@@ -35,11 +50,11 @@ class xml_features:
             except AttributeError:
                 pass  # fallback to dict
             try:
-                self. n_frames = int(obj.SpimData.SequenceDescription.Timepoints.last.cdata.split()[0])
+                self.n_frames = int(obj.SpimData.SequenceDescription.Timepoints.last.cdata.split()[0])
                 break
             except KeyError:
                 raise AttributeError("There is something wrong with the .xml file") from None
-                print('There is something wrong with the .xml file')
+        
 
 
 
@@ -74,13 +89,13 @@ class csv_features:
 
         # Spot source ID
         for i in range(n_features):
-            if edges.keys()[i][1]=='Source spot id':
+            if edges.keys()[i][1]=='Source spot id' and len(edges.Label)>1: # len(edges.Label) --> In case there are no tracks
                 self.spot_source = np.array(edges[edges.keys()[i]][1:], dtype=int)
                 break
 
         # Spot target ID        
         for i in range(n_features):
-            if edges.keys()[i][1]=='Target spot id':        
+            if edges.keys()[i][1]=='Target spot id' and len(edges.Label)>1:        
                 self.spot_target = np.array(edges[edges.keys()[i]][1:], dtype=int)
                 break
 
@@ -89,31 +104,33 @@ class csv_features:
             if data.keys()[i][0]=='Spot frame':
                 self.frames = np.array(data[data.keys()[i]][1:], dtype=int)
                 break
-
+                
         # Index to start the rest of the features
         for i in range(n_features):
             if data.keys()[i][0]=='Spot gaussian-filtered intensity':
                 ind = i
                 break
 
-        # Spot gaussian-filtered intensity: mean and std
+        # Spot gaussian-filtered intensity: mean, std and median
         aux = ind
         self.mean = []
         self.std = []
+        self.median = []
 
         for i in range(xml_params.channels):
             self.mean.append(np.array(list(map(float,data[data.keys()[aux]][1:]))))
             self.std.append(np.array(list(map(float,data[data.keys()[aux+xml_params.channels]][1:]))))
+            self.median.append(np.array(list(map(float,data[data.keys()[aux+(xml_params.channels*2)]][1:]))))
             aux += 1
 
-        ind += xml_params.channels*2
+        ind += xml_params.channels*3
 
         # X,Y,Z Position for each individual spot
         self.pos = []
         for i in range(xml_params.dim):
             self.pos.append(np.array(data[data.keys()[ind+i]][1:], dtype = float))
 
-        ind += (xml_params.dim+1)
+        ind += (xml_params.dim+xml_params.channels+1)
 
         # Track ID
         self.track_id = np.array(data[data.keys()[ind]][1:], dtype=int)
@@ -129,6 +146,7 @@ class csv_features:
         if len(data.keys())==ind:
             print('There are no Tags.')
         else:
+            # Tags are in the end of the .csv file, if any
             for i in range(len(data.keys())-ind):
                 if len(data.keys()[ind+i]):
                     self.tags += [data.keys()[ind+i]]
@@ -148,6 +166,7 @@ class ordering_tracks:
 
         # Dictionaries to save mean, std and XYZ coordinates, links, source and target ids of spots
         mean_by_track = {key:[] for key in np.arange(xml_params.channels)}
+        median_by_track = {key:[] for key in np.arange(xml_params.channels)}
         frames_by_track = []
         std_by_track = {key:[] for key in np.arange(xml_params.channels)}
         pos_by_track = {key:[] for key in np.arange(xml_params.dim)} # for XYZ Data or XY Data
@@ -155,52 +174,75 @@ class ordering_tracks:
         source_by_track = []
         target_by_track = []
         ids_by_track = []
-
+        cells_track = [] # Keep tracks of the spots which have a track
+        
         for i in range(len_id):
             idx = np.where(csv_params.track_id == np.unique(csv_params.track_id)[i])[0]
-            sorted_frames = csv_params.frames[idx].argsort()
             
-            # Save the sorted frames
-            frames_by_track.append(np.sort(csv_params.frames[idx]))
-            
-            # Save the sorted links (1, 2 or 3 links in case of division)
-            links_by_track.append(csv_params.n_links[idx][sorted_frames])
-            
-            # IDs by tracks
-            ids_by_track.append(csv_params.IDs[idx][sorted_frames])
-            
-            # Sorted spot source ID and spot target ID
-            ind_ids = csv_params.IDs[idx][sorted_frames]
-            source_by_track.append(csv_params.spot_source[np.array([ind for ind,element in enumerate(csv_params.spot_source) if element in ind_ids[:-1]])])
-            target_by_track.append(csv_params.spot_target[np.array([ind for ind,element in enumerate(csv_params.spot_target) if element in ind_ids[1:]])])
-            
-            # Save the coordinates
-            for j in range(xml_params.dim):
-                pos_by_track[j].append(csv_params.pos[j][idx][sorted_frames])
-            
-            # Save the mean and std according to their channel
-            for j in range(xml_params.channels):
-                mean_by_track[j].append(csv_params.mean[j][idx][sorted_frames])
-                std_by_track[j].append(csv_params.std[j][idx][sorted_frames])
+            # In case there are spots with tracks
+            if len(idx)>1:
+                sorted_frames = csv_params.frames[idx].argsort()
+                
+                # Save the sorted frames
+                frames_by_track.append(np.sort(csv_params.frames[idx]))
+                
+                # Save the sorted links (1, 2 or 3 links in case of division)
+                links_by_track.append(csv_params.n_links[idx][sorted_frames])
+
+                # IDs by tracks
+                ids_by_track.append(csv_params.IDs[idx][sorted_frames])
+
+                # Sorted spot source ID and spot target ID
+                ind_ids = csv_params.IDs[idx][sorted_frames]
+                source_by_track.append(csv_params.spot_source[np.array([ind for ind,element in enumerate\
+                                                                        (csv_params.spot_source) if element in ind_ids[:-1]])])
+                target_by_track.append(csv_params.spot_target[np.array([ind for ind,element in enumerate\
+                                                                        (csv_params.spot_target) if element in ind_ids[1:]])])
+
+                # Save the coordinates
+                for j in range(xml_params.dim):
+                    pos_by_track[j].append(csv_params.pos[j][idx][sorted_frames])
+
+                # Save the mean, median and std according to their channel
+                for j in range(xml_params.channels):
+                    mean_by_track[j].append(csv_params.mean[j][idx][sorted_frames])
+                    median_by_track[j].append(csv_params.median[j][idx][sorted_frames])
+                    std_by_track[j].append(csv_params.std[j][idx][sorted_frames])
+                
+                # cells with tracks
+                cells_track.append(i)
+                
+            # If there are spots without any tracks    
+            else:
+                continue
 
 
         # ORDER TRACKS ACCORDING WHETHER THEY DIVIDE OR NOT
-        self.spots_features = {key:[] for key in ['Frames', 'Mean', 'ID', 'DivID', 'X', 'Y','Z']}
+        self.spots_features = {key:[] for key in ['Frames', 'Mean', 'Median', 'ID', 'DivID', 'X', 'Y']}
         # DivID : If division, the an ID equal to its sibling. If not, nan              
         DivID = 0
         self.n_tracks_divs = 0 # Number of tracks including divisions
-        self. n_division_tracks = 0 # Number of tracks with divisions
+        self.n_division_tracks = 0 # Number of tracks with divisions
 
-        for i in range(len_id):
+        for i in range(len(cells_track)):
+            # Are there any divisions in the track?  
+            # (e.g. the spot divides in two different opportunities during all the timeseries)
             n_divs = len(list(map(int,np.where(links_by_track[i]>2)[0])))
+            
+            # How many times the spot divides per division?
+            # (e.g. in one specific division, in how many daughters the spot divided?)
+            #n_divs_cell = links_by_track[links_by_track[i]>2]
+            
             if n_divs == 0: # There is no cell division
                 self.spots_features['Frames'].append(frames_by_track[i])
                 self.spots_features['Mean'].append(mean_by_track[0][i])
+                self.spots_features['Median'].append(median_by_track[0][i])
                 self.spots_features['ID'].append(ids_by_track[i])
                 self.spots_features['DivID'].append(0)
                 self.spots_features['X'].append(pos_by_track[0][i])
                 self.spots_features['Y'].append(pos_by_track[1][i])
                 self.spots_features['Z'].append(pos_by_track[2][i])
+                
                 self.n_tracks_divs += 1
                 
             else: # Otherwise, there is cell division
@@ -218,6 +260,7 @@ class ordering_tracks:
                 # while we have not stored all IDs, loop across tracks and fill them with targets (if not in list_used)
                 
                 while not(all(elem in list_used for elem in ids_by_track[i])):
+                    
                     for j in range(n_divs+1):
                         idx = np.where(source_by_track[i] == div_vect[j][-1])[0]
                         # In the exact moment of division
@@ -248,9 +291,6 @@ class ordering_tracks:
                     self.spots_features['Frames'].append(frames_by_track[i][inds])
                     self.spots_features['Mean'].append(mean_by_track[0][i][inds])
                     self.spots_features['ID'].append(ids_by_track[i][inds])
-                    self.spots_features['X'].append(pos_by_track[0][i][inds])
-                    self.spots_features['Y'].append(pos_by_track[1][i][inds])
-                    self.spots_features['Z'].append(pos_by_track[2][i][inds])
                     self.spots_features['DivID'].append(DivID)
                     self.n_tracks_divs += 1
                     self.n_division_tracks += 1        
@@ -297,8 +337,7 @@ class xml_reader:
                 break
             except AttributeError:
                 n_tracks = 0
-                print("There are no tracks, just independent spots")
-                #raise AttributeError("There are no tracks, just independent spots") from None
+                raise AttributeError("There are no tracks, just independent spots") from None
             # Keep in the loop until the last track 
 
         if len(n_tracks) == 0 : 
@@ -562,8 +601,7 @@ class peak_detection:
             self.n_cycles = max(np.unique(cycles_final))
 
 class bulk_peak_analysis():
-    def __init__(self, cycles_T_minus_plot, cycles_T_plus_plot, cycles_A_minus_plot, cycles_A_plus_plot, cycles):
-
+    def __init__(self, cycles_T_minus_plot, cycles_T_plus_plot, cycles_A_minus_plot, cycles_A_plus_plot):
 
         # Calculate the median and standard deviation
         self.mean_T_minus_plot = np.zeros(max(cycles))
@@ -591,7 +629,7 @@ class bulk_peak_analysis():
                 except IndexError:
                     continue
 
-            
+
             self.mean_T_minus_plot[i] = np.nanmedian(T_minus)
             self.std_T_minus_plot[i] = np.nanstd(T_minus)
             self.mean_T_plus_plot[i] = np.nanmedian(T_plus)
