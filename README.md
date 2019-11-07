@@ -7,7 +7,7 @@ As an output, Mastodon provides either a -mamut.xml or a .csv file which contain
 
 
 ## Dependencies
-numpy
+numpy \\
 matplotlib.pylab
 pandas
 scipy
