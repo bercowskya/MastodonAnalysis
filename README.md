@@ -20,11 +20,12 @@ Below you can find a description for each of these classes:
 
 ### Class ```xml_features```:
 Gets as input the .xml file from the initial conversion using either BigdataViewer, Bigstitcher or Multiview reconstruction to convert the files into HDF5/XML. 
-It can be called by using the code:
+This class can be called by using the following line of code:
 
 ```python
 fts = xml_features(path_xml)
 ```
+where ```path_xml``` has the directory where the path of the .xml and .hdf5 files are. This line of code saves the output of the class xml_features into the object ```fts```. Therefore, if you write ```fts.``` and then press **Tab** you will get all possible outcomes from this class. The list of these outcomes are:
 
 * channels
 * dimensions
