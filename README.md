@@ -13,7 +13,7 @@ Before using Mastodon, you need to convert your files in a format that BigData v
 
 With Mastodon you will be able to track large amount of cells in a manual, semi-automatic or automatic way. The outputs from the tracking are two .csv files: name-edges.csv and name-vertices.csv . The first one contains the information obtained from the spots: mean, median and standard deviation of intensity of all the channels; x, y, z coordinates of the centroid of the spots; spots radius; detection quality for each spot; tags and sub-tags for the spots; the individual ID for each spot; the track ID to which each spot corresponds. 
 
-## Using MastodonAnalysis.py to analyze Mastodon data
+## Using MastodonAnalysis.py to analyze Mastodon data
 MastodonAnalysis.py is a collection of classes that allows you to obtain tidy arrays with the tracks' and spots' features in an easy way. 
 
 Below you can find a description for each of these classes:
