@@ -27,7 +27,7 @@ Returns:
 - height
 - number of slices
 - x,y,z pixel size
-- coordinate units ($\mu$m, mm, etc.)
+- coordinate units ($ \mu $ m, mm, etc.)
 
 ### Class csv_features:
 
