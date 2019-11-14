@@ -18,16 +18,16 @@ MastodonAnalysis.py is a collection of classes that allows you to obtain tidy ar
 
 Below you can find a description for each of these classes:
 
-### Class xml_features:
+### Class ```xml_features```:
 Gets as input the .xml file from the initial conversion using either BigdataViewer, Bigstitcher or Multiview reconstruction to convert the files into HDF5/XML. 
 Returns:
-- channels
-- dimensions
-- width
-- height
-- number of slices
-- x,y,z pixel size
-- coordinate units ($ \mu $ m, mm, etc.)
+* channels
+* dimensions
+* width
+* height
+* number of slices
+* x,y,z pixel size
+* coordinate units ($ \mu $ m, mm, etc.)
 
 ### Class csv_features:
 
