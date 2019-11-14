@@ -29,15 +29,15 @@ Returns:
 * x,y,z pixel size
 * coordinate units ($ \mu $ m, mm, etc.)
 
-### Class csv_features:
+### Class ```csv_features```:
 
-### Class ordering_tracks:
+### Class ```ordering_tracks```:
 
-### Class xml_reader:
+### Class ```xml_reader```:
 
-### Class peak_detection:
+### Class ```peak_detection```:
 
-### Class bulk_peak_analysis:
+### Class ```bulk_peak_analysis```:
 
 ## Dependencies
 numpy 
