@@ -36,7 +36,13 @@ where ```path_xml``` has the directory where the path of the .xml and .hdf5 file
 * coordinate units ($ \mu $ m, mm, etc.)
 
 ### Class ```csv_features```:
-This class allows you to obtain all the information that comes in the .csv files (-vertices and -edges) that are generated with Mastodon once you have computed the features in Mastodon and saved the results in the .csv format. The file called name-vertices.csv contains all the information concerning each individual spot.
+This class allows you to obtain all the information that comes in the .csv files (-vertices and -edges) that are generated with Mastodon once you have computed the features in Mastodon and saved the results in the .csv format. The file called name-vertices.csv contains all the information concerning each individual spot. The file called name-edges.csv contains all the information concerning the links of each spot. 
+
+To call this class use the following line of code:
+```python
+spots = csv_features(path_csv, path_xml)
+```
+This line of code saves the output of the class xml_features into the object ```spots```. Therefore, if you write ```spots.``` and then press **Tab** you will get all possible outcomes from this class.
 
 The list of the outcomes are:
 
@@ -55,7 +61,7 @@ The list of the outcomes are:
 * Tags and subtags
 
 ### Class ```ordering_tracks```:
-
+This class order tracks acoording to whether they divide or not 
 
 ### Class ```xml_reader```:
 
