@@ -36,7 +36,8 @@ where ```path_xml``` has the directory where the path of the .xml and .hdf5 file
 * coordinate units ($ \mu $ m, mm, etc.)
 
 ### Class ```csv_features```:
-This class allows you to obtain all the information that comes in the .csv files (-vertices and -edges) that are generated with Mastodon once you have computed the features in Mastodon and saved the results in the .csv format. 
+This class allows you to obtain all the information that comes in the .csv files (-vertices and -edges) that are generated with Mastodon once you have computed the features in Mastodon and saved the results in the .csv format. The file called name-vertices.csv contains all the information concerning each individual spot.
+
 The list of the outcomes are:
 
 * number of links per spot
@@ -54,6 +55,7 @@ The list of the outcomes are:
 * Tags and subtags
 
 ### Class ```ordering_tracks```:
+
 
 ### Class ```xml_reader```:
 
